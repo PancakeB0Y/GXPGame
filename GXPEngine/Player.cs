@@ -42,8 +42,6 @@ public class Player : EasyDraw
 
     void MovePlayer()
     {
-        Console.WriteLine(xAcceleration);
-
         bool moving = false;
 
         //Handle gravity and downward acceleration
@@ -93,7 +91,14 @@ public class Player : EasyDraw
             if (currJumpCount >= jumpCount) { return; }
 
             isJumping = true;
-            currJumpCount++;
+            if (col != null)
+            {
+                currJumpCount++;
+            }
+            else
+            {
+                currJumpCount += 2;
+            }
 
             yAcceleration = 0;
             yAcceleration -= jumpImpulse;
