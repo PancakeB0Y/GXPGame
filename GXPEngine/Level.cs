@@ -5,9 +5,9 @@ using GXPEngine;
 public class Level : GameObject
 {
     Game myGame;
-    float horizontalCenter;
+    public Player player;
+    public float horizontalCenter;
 
-    Player player;
 
     public Level(Game myGame)
     {
@@ -28,19 +28,6 @@ public class Level : GameObject
 
     void Update()
     {
-        HandleScrolling();
     }
 
-    void HandleScrolling()
-    {
-        //Scroll when player is too far right
-        if (player.x + x > horizontalCenter)
-        {
-            x = horizontalCenter - player.x;
-        }
-        if (player.x + x < horizontalCenter)
-        {
-            x = horizontalCenter - player.x;
-        }
-    }
 }

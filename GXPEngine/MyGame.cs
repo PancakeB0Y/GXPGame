@@ -6,6 +6,7 @@ using System.Diagnostics;                           // System.Drawing contains d
 public class MyGame : Game
 {
     EasyDraw background;
+    Level level;
 
     public MyGame() : base(1280, 720, false)
     {
@@ -13,7 +14,9 @@ public class MyGame : Game
         FillBackground();
 
         AddChild(background);
-        AddChild(new Level(this));
+
+        level = new Level(this);
+        AddChild(level);
 
         Console.WriteLine("Project initialized");
     }
@@ -34,8 +37,31 @@ public class MyGame : Game
         }
     }
 
+    void HandleScrolling()
+    {
+        //Scroll when player is too far right
+        if (level.player.x + level.x > level.horizontalCenter)
+        {
+            level.x = level.horizontalCenter - level.player.x;
+        }
+        if (level.player.x + level.x < level.horizontalCenter)
+        {
+            level.x = level.horizontalCenter - level.player.x;
+        }
+
+        if (Input.GetKey(Key.A))
+        {
+            background.x += 1;
+        }
+        if (Input.GetKey(Key.D))
+        {
+            background.x -= 1;
+        }
+    }
+
     void Update()
     {
+        HandleScrolling();
     }
 
     static void Main()
