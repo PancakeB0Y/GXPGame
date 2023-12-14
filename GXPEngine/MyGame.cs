@@ -17,8 +17,9 @@ public class MyGame : Game
 
         level = new Level(this);
         AddChild(level);
-
         Console.WriteLine("Project initialized");
+
+        game.OnAfterStep += LateUpdate;
     }
     void FillBackground()
     {
@@ -49,17 +50,10 @@ public class MyGame : Game
             level.x = level.horizontalCenter - level.player.x;
         }
 
-        if (Input.GetKey(Key.A))
-        {
-            background.x += 1;
-        }
-        if (Input.GetKey(Key.D))
-        {
-            background.x -= 1;
-        }
+        background.x = level.x * 0.5f;
     }
 
-    void Update()
+    void LateUpdate()
     {
         HandleScrolling();
     }

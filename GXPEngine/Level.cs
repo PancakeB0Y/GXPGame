@@ -8,7 +8,6 @@ public class Level : GameObject
     public Player player;
     public float horizontalCenter;
 
-
     public Level(Game myGame)
     {
         this.myGame = myGame;
@@ -17,7 +16,7 @@ public class Level : GameObject
         player = new Player(400, 400);
         AddChild(player);
 
-        AddChild(new Platform(0, 400, 3000, 100));
+        AddChild(new Platform(0, 400, 10000, 100));
         AddChild(new Platform(1100, 400, 200, 100));
         AddChild(new Platform(1100, 100, 400, 100));
         /*AddChild(new Platform(900, 400, 100, 100));

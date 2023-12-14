@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Drawing;
+using System.Drawing.Printing;
 using GXPEngine;
 using GXPEngine.Core; // for Collision
 public class Player : EasyDraw
@@ -9,7 +10,7 @@ public class Player : EasyDraw
     const float playerSpeed = 3;
     const float gravity = 0.1f;
 
-    float xAcceleration = 0;
+    public float xAcceleration = 0;
     const float xAccelerationIncrease = 0.05f;
     const float maxXAcceleration = 5f;
 
@@ -18,7 +19,7 @@ public class Player : EasyDraw
     const float minYAcceleration = -3.3f; //Max jump acceleration
     const float maxYAcceleration = 5f;
 
-    const int jumpCount = 2;
+    const int jumpCount = 1;
     int currJumpCount = 0;
     const float jumpImpulse = 2;
     const float jumpAcceleration = 0.05f; //Upward acceleration when holding jump button
@@ -28,6 +29,9 @@ public class Player : EasyDraw
     int idleFrames = 0;
 
     bool isJumping = false;
+
+    bool isExplosivePlaced = false;
+    Explosive curExplosive;
 
     public Player(int pX, int pY) : base(50, 65)
     {
@@ -83,6 +87,15 @@ public class Player : EasyDraw
             moving = true;
             playerSprite.Mirror(false, false);
         }
+        if (!Input.GetKey(Key.A) && !Input.GetKey(Key.D))
+        {
+            idleFrames++;
+            if (idleFrames >= 5)
+            {
+                idleFrames = 5;
+                xAcceleration = 0;
+            }
+        }
         xAcceleration = Mathf.Clamp(xAcceleration, -maxXAcceleration, maxXAcceleration);
 
         //Handle Jumping
@@ -97,7 +110,8 @@ public class Player : EasyDraw
             }
             else
             {
-                currJumpCount += 2;
+                isJumping = false;
+                return;
             }
 
             yAcceleration = 0;
@@ -134,22 +148,36 @@ public class Player : EasyDraw
         else
         {
             playerSprite.SetCycle(0, 1);
-
-            idleFrames++;
-            if (idleFrames >= 5)
-            {
-                idleFrames = 5;
-                xAcceleration = 0;
-            }
         }
 
         playerSprite.Animate(0.1f);
+    }
+
+    void handleExplosives()
+    {
+        Console.WriteLine(xAcceleration);
+        if (Input.GetKeyDown(Key.K))
+        {
+            if (!isExplosivePlaced)
+            {
+                curExplosive = new Explosive(x - 10, y - 20, this);
+                parent.AddChild(curExplosive);
+                isExplosivePlaced = true;
+            }
+            else
+            {
+                curExplosive.Explode();
+                //curExplosive.Destroy();
+                isExplosivePlaced = false; ;
+            }
+        }
     }
 
     //Called every frame
     void Update()
     {
         MovePlayer();
+        handleExplosives();
     }
 
     //Called every frame
