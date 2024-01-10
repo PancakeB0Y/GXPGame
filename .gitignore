@@ -3,12 +3,6 @@
 ##
 ## Get latest from https://github.com/github/gitignore/blob/main/VisualStudio.gitignore
 
-# GXP engine
-GXPEngine/obj
-GXPEngine.userprefs
-GXPEngine/bin/Debug
-GXPEngine/bin/Release
-
 # User-specific files
 *.rsuser
 *.suo
@@ -23,7 +17,6 @@ GXPEngine/bin/Release
 mono_crash.*
 
 # Build results
-[Dd]ebug/
 [Dd]ebugPublic/
 [Rr]elease/
 [Rr]eleases/
@@ -33,7 +26,6 @@ x86/
 [Aa][Rr][Mm]/
 [Aa][Rr][Mm]64/
 bld/
-[Bb]in/
 [Oo]bj/
 [Ll]og/
 [Ll]ogs/
