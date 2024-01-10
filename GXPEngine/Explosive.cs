@@ -36,7 +36,7 @@ public class Explosive : EasyDraw
 
             if (explosionForce <= 0.01f)
             {
-                Destroy();
+                LateDestroy();
             }
         }
     }

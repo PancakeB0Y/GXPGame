@@ -33,7 +33,7 @@ public class Player : EasyDraw
     bool isExplosivePlaced = false;
     Explosive curExplosive;
 
-    public Player(int pX, int pY) : base(50, 65)
+    public Player(float pX, float pY) : base(50, 65)
     {
         SetXY(pX, pY);
         Clear(Color.Green);
@@ -155,7 +155,6 @@ public class Player : EasyDraw
 
     void handleExplosives()
     {
-        Console.WriteLine(xAcceleration);
         if (Input.GetKeyDown(Key.K))
         {
             if (!isExplosivePlaced)

@@ -1,7 +1,8 @@
 using System;                                   // System contains a lot of default C# libraries 
 using GXPEngine;                                // GXPEngine contains the engine
 using System.Drawing;
-using System.Diagnostics;                           // System.Drawing contains drawing tools such as Color definitions
+using System.Diagnostics;
+using System.Collections.Generic;                           // System.Drawing contains drawing tools such as Color definitions
 
 public class MyGame : Game
 {
@@ -11,43 +12,37 @@ public class MyGame : Game
     public MyGame() : base(1280, 720, false)
     {
         background = new EasyDraw(800, 600, false);
-        FillBackground();
-
         AddChild(background);
 
-        level = new Level(this);
-        AddChild(level);
-        Console.WriteLine("Project initialized");
+        LoadLevel("level1.tmx");
 
         game.OnAfterStep += LateUpdate;
     }
-    void FillBackground()
+
+    public void LoadLevel(String filename)
     {
-        for (int i = 0; i < 100; i++)
+        //Destroy old level
+        List<GameObject> children = GetChildren();
+        for (int i = children.Count - 1; i >= 0; i--)
         {
-            // Set the fill color of the canvas to a random color:
-            background.Fill(Utils.Random(100, 255), Utils.Random(100, 255), Utils.Random(100, 255));
-            // Don't draw an outline for shapes:
-            background.NoStroke();
-            // Choose a random position and size:
-            float px = Utils.Random(0, width);
-            float py = Utils.Random(0, height);
-            float size = Utils.Random(2, 5);
-            // Draw a small circle shape on the canvas:
-            background.Ellipse(px, py, size, size);
+            children[i].Destroy();
         }
+
+        //Load next level
+        level = new Level(filename);
+        AddChild(level);
     }
 
     void HandleScrolling()
     {
         //Scroll when player is too far right
-        if (level.player.x + level.x > level.horizontalCenter)
+        if (level.player.x + level.x > width / 2)
         {
-            level.x = level.horizontalCenter - level.player.x;
+            level.x = width / 2 - level.player.x;
         }
-        if (level.player.x + level.x < level.horizontalCenter)
+        if (level.player.x + level.x < width / 2)
         {
-            level.x = level.horizontalCenter - level.player.x;
+            level.x = width / 2 - level.player.x;
         }
 
         background.x = level.x * 0.5f;
