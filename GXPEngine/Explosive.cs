@@ -1,48 +1,41 @@
 ﻿using System;
+using System.Collections;
+using System.Collections.Generic;
 using System.Drawing;
 using System.Runtime.InteropServices;
 using GXPEngine;
+using GXPEngine.Core;
 
 public class Explosive : EasyDraw
 {
-    Player curPlayer;
+    readonly Player player;
 
-    float explosionForce = 12;
-    const float maxExplosion = 500;
-    float totalExplosion = 0;
+    public float explosionForce = 8;
+    const int closeExplosionRange = 60; //The distance within which the explosion is the strongest
+    const int explosionRange = 300; //The distance within which the explosion has any effect
+    float distMult; //Explosion multiplier based on the distance from the player to the explosive
+    Vector2 explosionDir;
 
-    public bool hasExploded = false;
-    public Explosive(float pX, float pY, Player curPlayer) : base(20, 20, false)
+    public Explosive(Player player) : base(20, 20, false)
     {
-        this.curPlayer = curPlayer;
+        this.player = player;
 
         Clear(Color.Red);
-        SetXY(pX, pY);
+        SetXY(this.player.x, this.player.y - width / 2);
+        SetOrigin(width / 2, height / 2);
     }
 
-    public void Explode()
+    public (float, Vector2) Explode()
     {
-        hasExploded = true;
-    }
+        float distToPlayer = DistanceTo(player);
 
-    void Exploding()
-    {
-        if (hasExploded)
-        {
-            Clear(0, 0, 0, 0);
-            curPlayer.MoveUntilCollision(curPlayer.xAcceleration + explosionForce, -explosionForce);
-            explosionForce *= 0.98f;
+        //Returns a value between 2 and 0 based on the distance from the explosive to the player
+        //If the player is within the closeExplosionRange the value is always 2
+        distMult = distToPlayer <= closeExplosionRange ? 2 : 2 - (Mathf.Clamp(distToPlayer - closeExplosionRange, 0, explosionRange) / (explosionRange / 2));
 
+        explosionDir = new Vector2(player.x - x, player.y - y - (player.height / 2));
+        explosionDir = explosionDir.NormalizeVector();
 
-            if (explosionForce <= 0.01f)
-            {
-                LateDestroy();
-            }
-        }
-    }
-
-    void Update()
-    {
-        Exploding();
+        return (distMult, explosionDir);
     }
 }

@@ -1,47 +1,66 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Printing;
 using GXPEngine;
 using GXPEngine.Core; // for Collision
 public class Player : EasyDraw
 {
-    AnimationSprite playerSprite;
+    readonly Level level;
+    readonly AnimationSprite playerSprite;
 
-    const float playerSpeed = 3;
+    float basePlayerSpeed = 3;
+    float playerSpeed = 3;
     const float gravity = 0.1f;
 
-    public float xAcceleration = 0;
+    //Acceleration when walking
+    float xAcceleration = 0;
     const float xAccelerationIncrease = 0.05f;
-    const float maxXAcceleration = 5f;
-
-    float yAcceleration = 0;
-    const float yAccelerationIncrease = 0.15f;
-    const float minYAcceleration = -3.3f; //Max jump acceleration
-    const float maxYAcceleration = 5f;
-
-    const int jumpCount = 1;
-    int currJumpCount = 0;
-    const float jumpImpulse = 2;
-    const float jumpAcceleration = 0.05f; //Upward acceleration when holding jump button
-
+    const float maxXAcceleration = 1.5f;
     const float reactivityPercent = 0.01f; //Multiplier when moving in opposite direction of acceleration
 
-    int idleFrames = 0;
+    //Acceleration when jumping and falling
+    float yAcceleration = 0;
+    const float yAccelerationIncrease = 0.15f;
+    const float maxYAcceleration = 3.3f;
+
+    const float jumpImpulse = 2;
+    const float jumpAcceleration = 0.12f; //Upward acceleration when holding jump button
+    int jumpFrames = 0; //Frames while holding jump button
+    const int maxJumpFrames = 30;
 
     bool isJumping = false;
+    bool isGrounded = false;
+
+    int idleFrames = 0;
+    const int maxIdleFrames = 5;
 
     bool isExplosivePlaced = false;
-    Explosive curExplosive;
+    List<Explosive> explosives;
+    List<(float distMult, Vector2 explosionDir)> explosionInfo;
 
-    public Player(float pX, float pY) : base(50, 65)
+    bool isOnPlatform = false;
+
+    public Player(Level level, float pX, float pY) : base(50, 65)
     {
         SetXY(pX, pY);
         Clear(Color.Green);
         SetOrigin(width / 2, height);
 
+        //Create player sprite on top of hitbox
         playerSprite = new AnimationSprite("platformerPack_character.png", 4, 2, -1, false, false);
         playerSprite.SetXY(-playerSprite.width / 2, -playerSprite.height);
         this.AddChild(playerSprite);
+
+        explosives = new List<Explosive>();
+        explosionInfo = new List<(float distMult, Vector2 explosionDir)>();
+        this.level = level;
+    }
+
+    public Player(Level level, float pX, float pY, float speed) : this(level, pX, pY)
+    {
+        playerSpeed = speed;
+        basePlayerSpeed = speed;
     }
 
     void MovePlayer()
@@ -53,15 +72,31 @@ public class Player : EasyDraw
         if (col != null)
         {
             yAcceleration = 0;
-            if (col.normal.y < 0) //If player touches floor reset available jumps
+            if (col.normal.y < 0) //If player touches floor -> isGrounded = true
             {
-                currJumpCount = 0;
+                isGrounded = true;
+                if (col.other.GetType() == typeof(MovingPlatform))
+                {
+                    if (!isOnPlatform)
+                    {
+                        StickToPlatform(col.other);
+                    }
+                }
             }
         }
-        else if (!isJumping)
+        else
         {
+            isGrounded = false;
+
+            //Falling speed gradually increases when not touching ground
             yAcceleration += yAccelerationIncrease;
-            yAcceleration = Mathf.Clamp(yAcceleration, minYAcceleration, maxYAcceleration);
+            yAcceleration = Mathf.Clamp(yAcceleration, -maxYAcceleration, maxYAcceleration);
+
+            if (isOnPlatform)
+            {
+                Console.WriteLine();
+                UnstickToPlatform(parent);
+            }
         }
 
         //Handle directional movement
@@ -90,9 +125,9 @@ public class Player : EasyDraw
         if (!Input.GetKey(Key.A) && !Input.GetKey(Key.D))
         {
             idleFrames++;
-            if (idleFrames >= 5)
+            if (idleFrames >= maxIdleFrames)
             {
-                idleFrames = 5;
+                idleFrames = maxIdleFrames;
                 xAcceleration = 0;
             }
         }
@@ -101,18 +136,9 @@ public class Player : EasyDraw
         //Handle Jumping
         if (Input.GetKeyDown(Key.SPACE))
         {
-            if (currJumpCount >= jumpCount) { return; }
+            if (!isGrounded) { return; }
 
             isJumping = true;
-            if (col != null)
-            {
-                currJumpCount++;
-            }
-            else
-            {
-                isJumping = false;
-                return;
-            }
 
             yAcceleration = 0;
             yAcceleration -= jumpImpulse;
@@ -123,15 +149,16 @@ public class Player : EasyDraw
         }
         if (Input.GetKey(Key.SPACE))
         {
-            if (yAcceleration <= minYAcceleration)
-            {
-                isJumping = false;
-            }
             if (isJumping)
             {
+                jumpFrames++;
+                if (jumpFrames >= maxJumpFrames)
+                {
+                    jumpFrames = 0;
+                    isJumping = false;
+                }
                 yAcceleration -= jumpAcceleration;
             }
-
         }
 
         //Handle animation
@@ -153,30 +180,94 @@ public class Player : EasyDraw
         playerSprite.Animate(0.1f);
     }
 
-    void handleExplosives()
+    void HandleExplosives()
     {
         if (Input.GetKeyDown(Key.K))
         {
             if (!isExplosivePlaced)
             {
-                curExplosive = new Explosive(x - 10, y - 20, this);
-                parent.AddChild(curExplosive);
+                explosives.Add(new Explosive(this));
+                level.AddChild(explosives[explosives.Count - 1]);
                 isExplosivePlaced = true;
             }
             else
             {
-                curExplosive.Explode();
-                //curExplosive.Destroy();
-                isExplosivePlaced = false; ;
+                explosionInfo.Add(explosives[explosives.Count - 1].Explode());
+                isExplosivePlaced = false;
             }
         }
+    }
+
+    void ApplyExplosionForce()
+    {
+        if (explosionInfo.Count == 0 || explosives.Count == 0)
+        {
+            playerSpeed = basePlayerSpeed;
+            return;
+        }
+        if (!isGrounded) { playerSpeed = 1; }
+
+        for (int i = explosionInfo.Count - 1; i >= 0; i--)
+        {
+            if (explosionInfo[i].distMult == 0)
+            {
+                explosives[i].LateDestroy();
+                explosives.RemoveAt(i);
+                explosionInfo.RemoveAt(i);
+                return;
+            }
+
+            //Remove the explosive visualizer 
+            explosives[i].Clear(0, 0, 0, 0);
+
+            //If the player touches the ground after the explosion is stops pushing him upwards to avoid bouncing
+            if (explosives[i].explosionForce < 8 && isGrounded)
+            {
+                MoveUntilCollision(explosionInfo[i].explosionDir.x * explosives[i].explosionForce * explosionInfo[i].distMult, 0);
+            }
+            else
+            {
+                Collision col = MoveUntilCollision(explosionInfo[i].explosionDir.x * explosives[i].explosionForce * explosionInfo[i].distMult, explosionInfo[i].explosionDir.y * explosives[i].explosionForce * explosionInfo[i].distMult);
+                if (col != null) //If a player collides with a wall it stops the force of the explosion
+                {
+                    explosives[i].explosionForce = 0.05f;
+                }
+            }
+
+            explosives[i].explosionForce *= 0.98f;
+
+            if (explosives[i].explosionForce <= 0.05f)
+            {
+                explosives[i].LateDestroy();
+                explosives.RemoveAt(i);
+                explosionInfo.RemoveAt(i);
+            }
+
+        }
+    }
+
+    void StickToPlatform(GameObject movingPlatform)
+    {
+        movingPlatform.AddChild(this);
+        x -= movingPlatform.x;
+        y -= movingPlatform.y;
+        isOnPlatform = true;
+    }
+
+    void UnstickToPlatform(GameObject movingPlatform)
+    {
+        level.AddChild(this);
+        x += movingPlatform.x;
+        y += movingPlatform.y;
+        isOnPlatform = false;
     }
 
     //Called every frame
     void Update()
     {
         MovePlayer();
-        handleExplosives();
+        HandleExplosives();
+        ApplyExplosionForce();
     }
 
     //Called every frame

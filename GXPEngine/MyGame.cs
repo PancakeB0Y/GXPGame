@@ -6,14 +6,8 @@ using System.Collections.Generic;                           // System.Drawing co
 
 public class MyGame : Game
 {
-    EasyDraw background;
-    Level level;
-
     public MyGame() : base(1280, 720, false)
     {
-        background = new EasyDraw(800, 600, false);
-        AddChild(background);
-
         LoadLevel("level1.tmx");
 
         game.OnAfterStep += LateUpdate;
@@ -29,29 +23,10 @@ public class MyGame : Game
         }
 
         //Load next level
-        level = new Level(filename);
-        AddChild(level);
+        AddChild(new Level(filename));
     }
 
-    void HandleScrolling()
-    {
-        //Scroll when player is too far right
-        if (level.player.x + level.x > width / 2)
-        {
-            level.x = width / 2 - level.player.x;
-        }
-        if (level.player.x + level.x < width / 2)
-        {
-            level.x = width / 2 - level.player.x;
-        }
-
-        background.x = level.x * 0.5f;
-    }
-
-    void LateUpdate()
-    {
-        HandleScrolling();
-    }
+    void LateUpdate() { }
 
     static void Main()
     {
