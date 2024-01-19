@@ -2,7 +2,8 @@ using System;                                   // System contains a lot of defa
 using GXPEngine;                                // GXPEngine contains the engine
 using System.Drawing;
 using System.Diagnostics;
-using System.Collections.Generic;                           // System.Drawing contains drawing tools such as Color definitions
+using System.Collections.Generic;
+using GXPEngine.Core;                           // System.Drawing contains drawing tools such as Color definitions
 
 public class MyGame : Game
 {

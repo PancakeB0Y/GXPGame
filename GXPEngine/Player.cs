@@ -24,7 +24,7 @@ public class Player : EasyDraw
     const float yAccelerationIncrease = 0.15f;
     const float maxYAcceleration = 3.3f;
 
-    const float jumpImpulse = 2;
+    const float jumpImpulse = 2; //Initial jump height
     const float jumpAcceleration = 0.12f; //Upward acceleration when holding jump button
     int jumpFrames = 0; //Frames while holding jump button
     const int maxJumpFrames = 30;
@@ -36,13 +36,17 @@ public class Player : EasyDraw
     const int maxIdleFrames = 5;
 
     bool isExplosivePlaced = false;
-    List<Explosive> explosives;
-    List<(float distMult, Vector2 explosionDir)> explosionInfo;
+    readonly List<Explosive> explosives;
+    readonly List<(float distMult, Vector2 explosionDir)> explosionInfo;
+    float curExplosiveCooldown;
+    const float explosiveCooldown = 0f; //In milliseconds
 
-    bool isOnPlatform = false;
+    bool isOnMovingPlatform = false;
 
     public Player(Level level, float pX, float pY) : base(50, 65)
     {
+        this.level = level;
+
         SetXY(pX, pY);
         Clear(Color.Green);
         SetOrigin(width / 2, height);
@@ -54,7 +58,7 @@ public class Player : EasyDraw
 
         explosives = new List<Explosive>();
         explosionInfo = new List<(float distMult, Vector2 explosionDir)>();
-        this.level = level;
+        curExplosiveCooldown = explosiveCooldown;
     }
 
     public Player(Level level, float pX, float pY, float speed) : this(level, pX, pY)
@@ -77,7 +81,7 @@ public class Player : EasyDraw
                 isGrounded = true;
                 if (col.other.GetType() == typeof(MovingPlatform))
                 {
-                    if (!isOnPlatform)
+                    if (!isOnMovingPlatform)
                     {
                         StickToPlatform(col.other);
                     }
@@ -92,9 +96,8 @@ public class Player : EasyDraw
             yAcceleration += yAccelerationIncrease;
             yAcceleration = Mathf.Clamp(yAcceleration, -maxYAcceleration, maxYAcceleration);
 
-            if (isOnPlatform)
+            if (isOnMovingPlatform)
             {
-                Console.WriteLine();
                 UnstickToPlatform(parent);
             }
         }
@@ -145,6 +148,7 @@ public class Player : EasyDraw
         }
         if (Input.GetKeyUp(Key.SPACE))
         {
+            jumpFrames = 0;
             isJumping = false;
         }
         if (Input.GetKey(Key.SPACE))
@@ -184,18 +188,21 @@ public class Player : EasyDraw
     {
         if (Input.GetKeyDown(Key.K))
         {
-            if (!isExplosivePlaced)
+            if (!isExplosivePlaced && curExplosiveCooldown >= explosiveCooldown)
             {
-                explosives.Add(new Explosive(this));
-                level.AddChild(explosives[explosives.Count - 1]);
+                explosives.Add(new Explosive(this, level));
+                parent.AddChild(explosives[explosives.Count - 1]);
                 isExplosivePlaced = true;
+                curExplosiveCooldown = 0;
             }
-            else
+            else if (isExplosivePlaced)
             {
                 explosionInfo.Add(explosives[explosives.Count - 1].Explode());
                 isExplosivePlaced = false;
             }
         }
+
+        curExplosiveCooldown += Time.deltaTime;
     }
 
     void ApplyExplosionForce()
@@ -236,7 +243,7 @@ public class Player : EasyDraw
 
             explosives[i].explosionForce *= 0.98f;
 
-            if (explosives[i].explosionForce <= 0.05f)
+            if (explosives[i].explosionForce <= 0.10f) //0.10f minimum explosionForce
             {
                 explosives[i].LateDestroy();
                 explosives.RemoveAt(i);
@@ -251,7 +258,7 @@ public class Player : EasyDraw
         movingPlatform.AddChild(this);
         x -= movingPlatform.x;
         y -= movingPlatform.y;
-        isOnPlatform = true;
+        isOnMovingPlatform = true;
     }
 
     void UnstickToPlatform(GameObject movingPlatform)
@@ -259,7 +266,7 @@ public class Player : EasyDraw
         level.AddChild(this);
         x += movingPlatform.x;
         y += movingPlatform.y;
-        isOnPlatform = false;
+        isOnMovingPlatform = false;
     }
 
     //Called every frame

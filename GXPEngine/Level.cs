@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.Reflection.Emit;
 using GXPEngine;
+using GXPEngine.Core;
 using TiledMapParser;
 
 public class Level : GameObject
@@ -11,7 +12,6 @@ public class Level : GameObject
     Chaser chaser;
     readonly EasyDraw background;
     readonly Map leveldata;
-    bool isGameOver = false;
     public Level(string filename)
     {
         leveldata = MapParser.ReadMap(filename);
@@ -71,28 +71,31 @@ public class Level : GameObject
         }
     }
 
-    float GetGlobalX(GameObject item)
+    public Vector2 GetGlobalXY(GameObject item)
     {
-        float value = item.x;
+        float valueX = item.x;
+        float valueY = item.y;
         if (item.parent != null && item.parent != this)
         {
-            value += GetGlobalX(item.parent);
+            valueX += GetGlobalXY(item.parent).x;
+            valueY += GetGlobalXY(item.parent).y;
         }
-        return value;
+        return new Vector2(valueX, valueY);
     }
 
     void HandleScrolling()
     {
+        Vector2 playerXY = GetGlobalXY(player);
         //Scroll following the player
         if (player != null)
         {
-            if (GetGlobalX(player) + x > 640)
+            if (playerXY.x + x > 640)
             {
-                x = 640 - GetGlobalX(player);
+                x = 640 - playerXY.x;
             }
-            if (GetGlobalX(player) + x < 640)
+            if (playerXY.x + x < 640)
             {
-                x = 640 - GetGlobalX(player);
+                x = 640 - playerXY.x;
             }
         }
 
@@ -104,7 +107,7 @@ public class Level : GameObject
         List<GameObject> children = GetChildren();
         for (int i = children.Count - 1; i >= 0; i--)
         {
-            children[i].Destroy();
+            children[i].LateDestroy();
         }
     }
 
@@ -113,7 +116,6 @@ public class Level : GameObject
         DestroyChildren();
         SpawnTiles(leveldata);
         SpawnObjects(leveldata);
-        isGameOver = false;
     }
     void HandleRestart()
     {
