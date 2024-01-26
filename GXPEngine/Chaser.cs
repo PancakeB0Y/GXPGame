@@ -13,6 +13,7 @@ public class Chaser : EasyDraw
         SetXY(pX, pY);
         this.speed = speed;
         this.moveRight = moveRight;
+        collider.isTrigger = true;
     }
 
     void MoveChaser()

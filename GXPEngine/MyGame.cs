@@ -7,30 +7,81 @@ using GXPEngine.Core;                           // System.Drawing contains drawi
 
 public class MyGame : Game
 {
-    public MyGame() : base(1280, 720, false)
+    string nextLevel;
+    HUD _HUD;
+
+    public MyGame() : base(Settings.Width, Settings.Height, Settings.FullScreen, true, Settings.ScreenResolutionX, Settings.ScreenResolutionY)
     {
         LoadLevel("level1.tmx");
 
-        game.OnAfterStep += LateUpdate;
+        //game.OnAfterStep += LateUpdate;
+        game.OnAfterStep += CheckLoadLevel;
     }
 
-    public void LoadLevel(String filename)
+    void DestroyAll()
     {
-        //Destroy old level
         List<GameObject> children = GetChildren();
         for (int i = children.Count - 1; i >= 0; i--)
         {
-            children[i].Destroy();
+            children[i].LateDestroy();
         }
-
-        //Load next level
-        AddChild(new Level(filename));
     }
 
-    void LateUpdate() { }
+    public void LoadLevel(string filename)
+    {
+        nextLevel = filename;
+    }
+
+    void CheckLoadLevel()
+    {
+        if (nextLevel != null)
+        {
+            //Destroy current level
+            DestroyAll();
+            //Load next level
+            LateAddChild(new Level(nextLevel));
+            CreateUI();
+            nextLevel = null;
+        }
+    }
+
+    void CreateUI()
+    {
+        _HUD = new HUD();
+        LateAddChild(_HUD);
+    }
+
+    public HUD GetHUD()
+    {
+        return _HUD;
+    }
+
+    void LateUpdate()
+    {
+    }
 
     static void Main()
     {
-        new MyGame().Start();
+        // Load settings before creating and starting the game:
+        Settings.Load();
+        if (Settings.FullScreen)
+        {
+            // "Release mode": catch all exceptions and exit:
+            try
+            {
+                new MyGame().Start();
+            }
+            catch (Exception error)
+            {
+                // Shortly show the error before terminating:
+                Console.WriteLine("Error: {0}\n terminating game.", error.Message);
+                // Alternatively (better): write the error data to a log file
+            }
+        }
+        else
+        {
+            // "Debug mode": let your IDE show the exception, line where it triggered, call stack, etc.:
+            new MyGame().Start();
+        }
     }
 }

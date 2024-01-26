@@ -21,8 +21,6 @@ public class MovingPlatform : Platform
         this.speed = speed;
     }
 
-
-
     public MovingPlatform(float pX, float pY, int pWidth, int pHeight, float endX, float endY, float speed = 0.5f) : this(pX, pY, pWidth, pHeight, speed)
     {
         endXY.x = endX;

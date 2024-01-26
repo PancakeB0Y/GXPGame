@@ -1,0 +1,26 @@
+// This is a comment line. Comments must *start* with //
+// Here are some parameters. Names must match variable names in AddOns/Settings.cs exactly:
+//
+///////// Screen resolution: 
+Width = 1280
+Height = 720
+ScreenResolutionX = 1280
+ScreenResolutionY = 720
+FullScreen=false
+///////// Alternative resolution:
+ScreenResolutionX = 1920
+ScreenResolutionY = 1080
+///////// Player 1 keys, WASD:
+P1Up=87
+P1Left=65
+P1Down=83
+P1Right=68
+///////// Player 2 keys, arrows:
+P2Up=283
+P2Left=285
+P2Right=286
+P2Down=284
+// Jump, space
+Jump=32
+//Explosive, K
+Explosive=75

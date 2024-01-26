@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.IO;
 using System.Reflection.Emit;
 using GXPEngine;
 using GXPEngine.Core;
@@ -10,69 +11,136 @@ public class Level : GameObject
 {
     Player player;
     Chaser chaser;
-    readonly EasyDraw background;
+    LevelChange levelChange;
+    EasyDraw imageBackground;
+    SpriteBatch spriteBackground;
     readonly Map leveldata;
     public Level(string filename)
     {
         leveldata = MapParser.ReadMap(filename);
 
-        background = new EasyDraw(800, 600, false);
-        AddChild(background);
-
-        SpawnTiles(leveldata);
-        SpawnObjects(leveldata);
+        //Infinite map crashes the game
+        if (leveldata.Infinite != 0)
+        {
+            Console.WriteLine("Tiled map is set to infinite. \nChange infinite value to 0 in order to load the map");
+        }
+        else
+        {
+            SpawnBackgroundImage(leveldata);
+            SpawnTiles(leveldata);
+            SpawnObjects(leveldata);
+        }
     }
 
     void SpawnTiles(Map leveldata)
     {
         if (leveldata.Layers == null || leveldata.Layers.Length == 0) return;
 
-        Layer mainLayer = leveldata.Layers[0];
-
-        short[,] tileNumbers = mainLayer.GetTileArray();
-
-        for (int row = 0; row < mainLayer.Height; row++)
+        foreach (Layer curLayer in leveldata.Layers)
         {
-            for (int col = 0; col < mainLayer.Width; col++)
+            short[,] tileNumbers = curLayer.GetTileArray();
+
+            if (curLayer.Name == "Background")
             {
-                int tileNumber = tileNumbers[col, row];
-                if (tileNumber > 0)
+                spriteBackground = new SpriteBatch();
+                for (int row = 0; row < curLayer.Height; row++)
                 {
-                    Platform tile = new Platform(col * 16, row * 16, 16, 16);
-                    AddChild(tile);
+                    for (int col = 0; col < curLayer.Width; col++)
+                    {
+                        int tileNumber = tileNumbers[col, row];
+                        if (tileNumber > 0)
+                        {
+                            AnimationSprite tile = new AnimationSprite("tileset.png", 25, 25, addCollider: false);
+                            spriteBackground.AddChild(tile);
+                            tile.SetFrame(2);
+                            tile.SetXY(tile.width * col, tile.height * row);
+                        }
+                    }
+                }
+                spriteBackground.Freeze();
+                spriteBackground.SetColor(0.5f, 0.5f, 0.5f);
+                AddChild(spriteBackground);
+            }
+            else
+            {
+                for (int row = 0; row < curLayer.Height; row++)
+                {
+                    for (int col = 0; col < curLayer.Width; col++)
+                    {
+                        int tileNumber = tileNumbers[col, row];
+                        if (tileNumber > 0)
+                        {
+                            AnimationSprite tile = new AnimationSprite("tileset.png", 25, 25);
+                            tile.SetFrame(28);
+                            tile.SetXY(tile.width * col, tile.height * row);
+                            AddChild(tile);
+                        }
+                    }
                 }
             }
         }
     }
+
+    void SpawnBackgroundImage(Map leveldata)
+    {
+        if (leveldata.ImageLayers == null || leveldata.ImageLayers.Length == 0) return;
+        foreach (ImageLayer curLayer in leveldata.ImageLayers)
+        {
+            string backgroundFilename = curLayer.Image.ToString();
+            backgroundFilename = backgroundFilename.Split(' ')[0];
+
+            imageBackground = new EasyDraw(backgroundFilename, false);
+            imageBackground.width = leveldata.Width * leveldata.TileWidth;
+            imageBackground.height = leveldata.Height * leveldata.TileHeight;
+            AddChild(imageBackground);
+        }
+    }
+
     void SpawnObjects(Map leveldata)
     {
         if (leveldata.ObjectGroups == null || leveldata.ObjectGroups.Length == 0) return;
 
-        ObjectGroup objectGroup = leveldata.ObjectGroups[0];
-        if (objectGroup.Objects == null || objectGroup.Objects.Length == 0) return;
-
-        foreach (TiledObject obj in objectGroup.Objects)
+        foreach (ObjectGroup objectGroup in leveldata.ObjectGroups)
         {
-            switch (obj.Name)
+            if (objectGroup.Objects == null || objectGroup.Objects.Length == 0) return;
+
+            foreach (TiledObject obj in objectGroup.Objects)
             {
-                case "Player":
-                    player = new Player(this, obj.X, obj.Y, obj.GetFloatProperty("Speed", 3));
-                    AddChild(player);
-                    break;
-                case "Chaser":
-                    chaser = new Chaser(obj.X, obj.Y, (int)obj.Width, (int)obj.Height, obj.GetFloatProperty("Speed", 0.5f), obj.GetBoolProperty("MoveRight", true));
-                    AddChild(chaser);
-                    break;
-                case "MovingPlatform":
-                    MovingPlatform movingPlatform = new MovingPlatform(obj.X, obj.Y, (int)obj.Width, (int)obj.Height, obj.GetFloatProperty("StartX", obj.X), obj.GetFloatProperty("StartY", obj.Y), obj.GetFloatProperty("EndX", obj.X + obj.Width * 2), obj.GetFloatProperty("EndY", obj.Y), obj.GetFloatProperty("Speed", 0.5f));
-                    AddChild(movingPlatform);
-                    break;
+                switch (obj.Name)
+                {
+                    case "Text":
+                        TextBox text = new TextBox(obj.X, obj.Y, (int)obj.Width, (int)obj.Height, obj.textField);
+                        AddChild(text);
+                        break;
+                    case "MovingPlatform":
+                        MovingPlatform movingPlatform = new MovingPlatform(obj.X, obj.Y, (int)obj.Width, (int)obj.Height, obj.GetFloatProperty("StartX", obj.X), obj.GetFloatProperty("StartY", obj.Y), obj.GetFloatProperty("EndX", obj.X + obj.Width * 2), obj.GetFloatProperty("EndY", obj.Y), obj.GetFloatProperty("Speed", 0.5f));
+                        AddChild(movingPlatform);
+                        break;
+                    case "LevelChange":
+                        levelChange = new LevelChange(obj.X, obj.Y, (int)obj.Width, (int)obj.Height, obj.GetStringProperty("NextLevel"));
+                        AddChild(levelChange);
+                        break;
+                    case "Player":
+                        //player = new Player(this, obj.X, obj.Y, obj.GetFloatProperty("Speed", 3));
+                        player = new Player(this, obj.X, obj.Y);
+                        AddChild(player);
+                        break;
+                    case "Chaser":
+                        chaser = new Chaser(obj.X, obj.Y, (int)obj.Width, (int)obj.Height, obj.GetFloatProperty("Speed", 0.5f), obj.GetBoolProperty("MoveRight", true));
+                        AddChild(chaser);
+                        break;
+                    case "Button":
+                        Button button = new Button(obj.X, obj.Y, (int)obj.Width, (int)obj.Height, obj.GetStringProperty("NextLevel", ""), obj.GetStringProperty("Image", ""));
+                        AddChild(button);
+                        break;
+                }
             }
         }
     }
 
-    public Vector2 GetGlobalXY(GameObject item)
+    Vector2 GetGlobalXY(GameObject item)
     {
+        if (item == null) return new Vector2(0, 0);
         float valueX = item.x;
         float valueY = item.y;
         if (item.parent != null && item.parent != this)
@@ -99,7 +167,10 @@ public class Level : GameObject
             }
         }
 
-        background.x = x * 0.5f;
+        if (spriteBackground != null)
+        {
+            spriteBackground.x = x * 0.5f;
+        }
     }
 
     void DestroyChildren()
@@ -114,6 +185,7 @@ public class Level : GameObject
     void Restart()
     {
         DestroyChildren();
+        SpawnBackgroundImage(leveldata);
         SpawnTiles(leveldata);
         SpawnObjects(leveldata);
     }
@@ -126,16 +198,25 @@ public class Level : GameObject
             return;
         }
 
-        if (player.HitTest(chaser))
+        if (chaser != null && player.HitTest(chaser))
         {
             Restart();
             return;
         }
 
-        if (player.y > game.height + player.height * 2)
+        if (player != null && player.y > game.height + player.height * 2)
         {
             Restart();
             return;
+        }
+    }
+
+
+    void SwitchLevel()
+    {
+        if (levelChange != null && player != null && player.HitTest(levelChange) && levelChange.NextLevel != "")
+        {
+            ((MyGame)game).LoadLevel(levelChange.NextLevel);
         }
     }
 
@@ -143,6 +224,7 @@ public class Level : GameObject
     {
         HandleScrolling();
         HandleRestart();
+        SwitchLevel();
     }
 
 }
