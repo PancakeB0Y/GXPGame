@@ -218,7 +218,7 @@ public class Level : GameObject
     {
         if (levelChange != null && player != null && player.HitTest(levelChange) && levelChange.NextLevel != "")
         {
-            nextLevel.Play();
+            nextLevel.Play(false, 0, 0.3f);
             ((MyGame)game).LoadLevel(levelChange.NextLevel);
         }
     }

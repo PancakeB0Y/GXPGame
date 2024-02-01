@@ -19,6 +19,7 @@ public class LevelChange : EasyDraw
     public LevelChange(float pX, float pY, int pWidth, int pHeight, string nextLevel) : base("assets/levelChange.png")
     {
         //Clear(Color.Yellow);
+        //Clear(255, 0, 0, 255);
         SetXY(pX, pY);
         width = pWidth;
         height = pHeight;

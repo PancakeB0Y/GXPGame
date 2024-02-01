@@ -11,7 +11,7 @@ public class Button : LevelChange
     {
         if (visualFilename != "" && visualFilename != null)
         {
-            Clear(0, 0, 0, 0);
+            //Clear(0, 0, 0, 0);
             visual = new EasyDraw(visualFilename);
             visual.width = (int)(pWidth / 2.5f);
             visual.height = pHeight / 2;

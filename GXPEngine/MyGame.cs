@@ -13,7 +13,7 @@ public class MyGame : Game
 
     public MyGame() : base(Settings.Width, Settings.Height, Settings.FullScreen, true, Settings.ScreenResolutionX, Settings.ScreenResolutionY, true)
     {
-        LoadLevel("level3.tmx");
+        LoadLevel("startMenu.tmx");
         backgroundMusic.Play(false, 0, 0.03f);
         //game.OnAfterStep += LateUpdate;
         game.OnAfterStep += CheckLoadLevel;
