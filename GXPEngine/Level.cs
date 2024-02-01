@@ -15,6 +15,8 @@ public class Level : GameObject
     EasyDraw imageBackground;
     SpriteBatch spriteBackground;
     readonly Map leveldata;
+
+    readonly Sound nextLevel = new Sound("assets/complete.wav");
     public Level(string filename)
     {
         leveldata = MapParser.ReadMap(filename);
@@ -29,6 +31,7 @@ public class Level : GameObject
             SpawnBackgroundImage(leveldata);
             SpawnTiles(leveldata);
             SpawnObjects(leveldata);
+
         }
     }
 
@@ -39,7 +42,6 @@ public class Level : GameObject
         foreach (Layer curLayer in leveldata.Layers)
         {
             short[,] tileNumbers = curLayer.GetTileArray();
-
             if (curLayer.Name == "Background")
             {
                 spriteBackground = new SpriteBatch();
@@ -50,15 +52,15 @@ public class Level : GameObject
                         int tileNumber = tileNumbers[col, row];
                         if (tileNumber > 0)
                         {
-                            AnimationSprite tile = new AnimationSprite("tileset.png", 25, 25, addCollider: false);
+                            AnimationSprite tile = new AnimationSprite("assets/tileset.png", 12, 2, addCollider: false);
                             spriteBackground.AddChild(tile);
-                            tile.SetFrame(2);
+                            tile.SetFrame(tileNumber - 1);
                             tile.SetXY(tile.width * col, tile.height * row);
                         }
                     }
                 }
                 spriteBackground.Freeze();
-                spriteBackground.SetColor(0.5f, 0.5f, 0.5f);
+                //spriteBackground.SetColor(0.5f, 0.5f, 0.5f);
                 AddChild(spriteBackground);
             }
             else
@@ -70,8 +72,8 @@ public class Level : GameObject
                         int tileNumber = tileNumbers[col, row];
                         if (tileNumber > 0)
                         {
-                            AnimationSprite tile = new AnimationSprite("tileset.png", 25, 25);
-                            tile.SetFrame(28);
+                            AnimationSprite tile = new AnimationSprite("assets/tileset.png", 12, 2);
+                            tile.SetFrame(tileNumber - 1);
                             tile.SetXY(tile.width * col, tile.height * row);
                             AddChild(tile);
                         }
@@ -167,10 +169,10 @@ public class Level : GameObject
             }
         }
 
-        if (spriteBackground != null)
+        /*if (spriteBackground != null)
         {
             spriteBackground.x = x * 0.5f;
-        }
+        }*/
     }
 
     void DestroyChildren()
@@ -216,6 +218,7 @@ public class Level : GameObject
     {
         if (levelChange != null && player != null && player.HitTest(levelChange) && levelChange.NextLevel != "")
         {
+            nextLevel.Play();
             ((MyGame)game).LoadLevel(levelChange.NextLevel);
         }
     }

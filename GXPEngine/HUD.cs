@@ -29,10 +29,10 @@ public class HUD : GameObject
             explosiveCooldown.Clear(255, 255, 255, 0);
             return;
         }
-        explosiveCooldown.Fill(Color.Red);
-        explosiveCooldown.Rect(0, 0, 120, 20);
-        explosiveCooldown.Fill(Color.Green);
-        explosiveCooldown.Rect(0, 0, explosiveCooldown.width * (curCooldown / maxCooldown), explosiveCooldown.height);
+        /*explosiveCooldown.Fill(Color.Red);
+        explosiveCooldown.Rect(0, 0, 120, 20);*/
+        explosiveCooldown.Fill(Color.White);
+        explosiveCooldown.Rect(0, 20, explosiveCooldown.width * (curCooldown / maxCooldown), explosiveCooldown.height / 2 - 5);
 
     }
 }

@@ -6,7 +6,7 @@ using GXPEngine;
 //Object that changes level when touched
 public class LevelChange : EasyDraw
 {
-    string _nextLevel;
+    protected string _nextLevel;
     public string NextLevel
     {
         get
@@ -16,10 +16,12 @@ public class LevelChange : EasyDraw
         }
         set => _nextLevel = value;
     }
-    public LevelChange(float pX, float pY, int pWidth, int pHeight, string nextLevel) : base(pWidth, pHeight)
+    public LevelChange(float pX, float pY, int pWidth, int pHeight, string nextLevel) : base("assets/levelChange.png")
     {
-        Clear(Color.Yellow);
+        //Clear(Color.Yellow);
         SetXY(pX, pY);
+        width = pWidth;
+        height = pHeight;
         _nextLevel = nextLevel;
         collider.isTrigger = true;
     }

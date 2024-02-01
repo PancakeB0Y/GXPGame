@@ -9,11 +9,12 @@ public class MyGame : Game
 {
     string nextLevel;
     HUD _HUD;
+    readonly Sound backgroundMusic = new Sound("assets/background.wav", true);
 
-    public MyGame() : base(Settings.Width, Settings.Height, Settings.FullScreen, true, Settings.ScreenResolutionX, Settings.ScreenResolutionY)
+    public MyGame() : base(Settings.Width, Settings.Height, Settings.FullScreen, true, Settings.ScreenResolutionX, Settings.ScreenResolutionY, true)
     {
-        LoadLevel("level1.tmx");
-
+        LoadLevel("level3.tmx");
+        backgroundMusic.Play(false, 0, 0.03f);
         //game.OnAfterStep += LateUpdate;
         game.OnAfterStep += CheckLoadLevel;
     }
@@ -54,10 +55,6 @@ public class MyGame : Game
     public HUD GetHUD()
     {
         return _HUD;
-    }
-
-    void LateUpdate()
-    {
     }
 
     static void Main()

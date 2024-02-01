@@ -50,15 +50,15 @@
 </data>
  </layer>
  <imagelayer id="4" name="Image Layer 1">
-  <image source="background.jpeg" width="318" height="159"/>
+  <image source="assets/background.png" width="100" height="100"/>
  </imagelayer>
  <objectgroup id="2" name="Object Layer 1">
-  <object id="1" name="Text" x="540.333" y="140.667" width="306" height="122">
-   <text fontfamily="Arial" pixelsize="25" wrap="1">GAME TITLE</text>
+  <object id="1" name="Text" x="418.999" y="142.001" width="452.667" height="212.667">
+   <text fontfamily="Arial" pixelsize="50" wrap="1" halign="center">BIRD QUEST</text>
   </object>
-  <object id="2" name="Button" x="450" y="272" width="390" height="232">
+  <object id="2" name="Button" x="506" y="272" width="278" height="232">
    <properties>
-    <property name="Image" value="square.png"/>
+    <property name="Image" value="assets/play.png"/>
     <property name="NextLevel" value="level1.tmx"/>
    </properties>
   </object>

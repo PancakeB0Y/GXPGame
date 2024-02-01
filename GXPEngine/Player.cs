@@ -15,9 +15,9 @@ public class Player : EasyDraw
 
     //Acceleration when walking
     float xVelocity = 0;
-    const float xAcceleration = 0.06f;
-    const float maxXVelocity = 2f;
-    const float reactivityPercent = 0.01f; //Multiplier when moving in opposite direction of acceleration
+    const float xAcceleration = 0.045f;
+    const float maxXVelocity = 1.5f;
+    const float reactivityPercent = 0.02f; //Multiplier when moving in opposite direction of acceleration
 
     //Acceleration when jumping and falling
     float yVelocity = 0;
@@ -29,10 +29,10 @@ public class Player : EasyDraw
     int jumpFrames = 0; //Frames while holding jump button
     const int maxJumpFrames = 30; //Max frames for extended jump
     int framesSinceGrounded = 0; //Frames since leaving platform
-    const int maxFramesSinceGrounded = 10; //Max frames allowed to jump after leaving platform
-    int framesSinceJump = 0; //Frames since jump button is pressed
+    const int maxFramesSinceGrounded = 12; //Max frames allowed to jump after leaving platform
+    /*int framesSinceJump = 0; //Frames since jump button is pressed
     const int maxFramesSinceJump = 10; //Max frames to register jump before touching ground
-    bool tolerateJump = false;
+    bool tolerateJump = false;*/
 
     bool isJumping = false;
     bool isGrounded = false;
@@ -48,17 +48,19 @@ public class Player : EasyDraw
 
     bool isOnMovingPlatform = false;
 
-    public Player(Level level, float pX, float pY) : base(50, 65)
+    Sound jumpSound = new Sound("assets/jump.wav", false, true);
+
+    public Player(Level level, float pX, float pY) : base(32, 40)
     {
         this.level = level;
 
         SetXY(pX, pY);
-        Clear(Color.Green);
+        //Clear(Color.Green); //Show hitbox
         SetOrigin(width / 2, height / 2);
 
         //Create player sprite on top of hitbox
-        playerSprite = new AnimationSprite("platformerPack_character.png", 4, 2, -1, false, false);
-        playerSprite.SetXY(-playerSprite.width / 2, -playerSprite.height / 2 - 15);
+        playerSprite = new AnimationSprite("assets/character.png", 21, 1, -1, false, false);
+        playerSprite.SetXY(-playerSprite.width / 2, -playerSprite.height / 2 - 4);
         this.AddChild(playerSprite);
 
         explosives = new List<Explosive>();
@@ -104,10 +106,6 @@ public class Player : EasyDraw
             yVelocity = Mathf.Clamp(yVelocity, -maxYVelocity, maxYVelocity);
 
             framesSinceGrounded++;
-            if (tolerateJump)
-            {
-                framesSinceJump++;
-            }
 
             if (isOnMovingPlatform)
             {
@@ -154,7 +152,6 @@ public class Player : EasyDraw
         {
             if (framesSinceGrounded > maxFramesSinceGrounded)
             {
-                tolerateJump = true;
                 return;
             }
 
@@ -162,6 +159,8 @@ public class Player : EasyDraw
 
             yVelocity = 0;
             yVelocity -= jumpImpulse;
+
+            jumpSound.Play(false, 0, 0.3f);
         }
         if (Input.GetKeyUp(Settings.Jump))
         {
@@ -185,12 +184,12 @@ public class Player : EasyDraw
         //Handle animation
         if (isJumping)
         {
-            playerSprite.SetCycle(1, 1);
+            playerSprite.SetCycle(8, 1);
             idleFrames = 0;
         }
         else if (moving)
         {
-            playerSprite.SetCycle(2, 2);
+            playerSprite.SetCycle(1, 4);
             idleFrames = 0;
         }
         else
@@ -198,7 +197,7 @@ public class Player : EasyDraw
             playerSprite.SetCycle(0, 1);
         }
 
-        playerSprite.Animate(0.1f);
+        playerSprite.Animate(0.05f);
     }
 
     void HandleExplosives()
@@ -250,9 +249,6 @@ public class Player : EasyDraw
                 explosionInfo.RemoveAt(i);
                 return;
             }
-
-            //Remove the explosive visualizer 
-            explosives[i].Clear(0, 0, 0, 0);
 
             //If the player touches the ground after the explosion is stops pushing him upwards to avoid bouncing
             if (explosives[i].ExplosionForce < 6 && isGrounded)

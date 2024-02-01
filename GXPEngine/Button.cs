@@ -6,15 +6,15 @@ using GXPEngine;
 public class Button : LevelChange
 {
     EasyDraw visual;
-    string nextLevel;
+    Sound pressSound = new Sound("assets/confirm.wav");
     public Button(float pX, float pY, int pWidth, int pHeight, string nextLevel, string visualFilename) : base(pX, pY, pWidth, pHeight, nextLevel)
     {
-        this.nextLevel = nextLevel;
         if (visualFilename != "" && visualFilename != null)
         {
+            Clear(0, 0, 0, 0);
             visual = new EasyDraw(visualFilename);
-            visual.width = pWidth;
-            visual.height = pHeight;
+            visual.width = (int)(pWidth / 2.5f);
+            visual.height = pHeight / 2;
             AddChild(visual);
         }
         else
@@ -29,15 +29,16 @@ public class Button : LevelChange
     {
         if (visual.HitTestPoint(Input.mouseX, Input.mouseY))
         {
-            visual.SetColor(1, 1, 1);
-            if (Input.GetMouseButtonDown(0) && nextLevel != "")
+            visual.SetColor(0.8f, 0.8f, 0.8f);
+            if (Input.GetMouseButtonDown(0) && _nextLevel != "")
             {
-                ((MyGame)game).LoadLevel(nextLevel);
+                pressSound.Play(false, 0, 0.3f);
+                ((MyGame)game).LoadLevel(_nextLevel);
             }
         }
         else
         {
-            visual.SetColor(0.8f, 0.8f, 0.8f);
+            visual.SetColor(1f, 1f, 1f);
         }
     }
 }

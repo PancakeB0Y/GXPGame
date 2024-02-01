@@ -13,12 +13,16 @@ public class MovingPlatform : Platform
     float curTime = 0.0f;
     public MovingPlatform(float pX, float pY, int pWidth, int pHeight, float speed = 0.5f) : base(pX, pY, pWidth, pHeight)
     {
-        Clear(Color.Blue);
+        //Clear(Color.Blue);
         startXY.x = pX;
         startXY.y = pX;
         endXY.x = pX + pWidth * 2;
         endXY.y = pY;
         this.speed = speed;
+        EasyDraw platformVisual = new EasyDraw("assets/platform.png", false);
+        platformVisual.width = pWidth;
+        platformVisual.height = pHeight;
+        AddChild(platformVisual);
     }
 
     public MovingPlatform(float pX, float pY, int pWidth, int pHeight, float endX, float endY, float speed = 0.5f) : this(pX, pY, pWidth, pHeight, speed)
@@ -39,12 +43,6 @@ public class MovingPlatform : Platform
         Vector2 movedPoint = new Vector2(x, y);
         movedPoint.PingPong(curTime, startXY, endXY);
         Move(movedPoint.x - x, movedPoint.y - y);
-
-        /*Collision col = MoveUntilCollision(moveDir.x * speed, moveDir.y * speed);
-        if (col != null && !HitTestByType(typeof(Player)))
-        {
-            speed = -speed;
-        }*/
     }
 
     void Update()
