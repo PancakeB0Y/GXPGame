@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
@@ -14,6 +15,9 @@ public class Level : GameObject
     LevelChange levelChange;
     EasyDraw imageBackground;
     SpriteBatch spriteBackground;
+    List<Checkpoint> checkpoints;
+    List<Collectible> collectibles;
+    List<int> collectiblesCollected;
     readonly Map leveldata;
 
     readonly Sound nextLevel = new Sound("assets/complete.wav");
@@ -28,10 +32,27 @@ public class Level : GameObject
         }
         else
         {
-            SpawnBackgroundImage(leveldata);
-            SpawnTiles(leveldata);
-            SpawnObjects(leveldata);
+            collectiblesCollected = new List<int>();
+            Restart();
+        }
+    }
 
+    void LoadTiles(Layer curLayer, GameObject parent, bool hasCollider)
+    {
+        short[,] tileNumbers = curLayer.GetTileArray();
+        for (int row = 0; row < curLayer.Height; row++)
+        {
+            for (int col = 0; col < curLayer.Width; col++)
+            {
+                int tileNumber = tileNumbers[col, row];
+                if (tileNumber > 0)
+                {
+                    AnimationSprite tile = new AnimationSprite("assets/tileset.png", 12, 2, addCollider: hasCollider);
+                    tile.SetFrame(tileNumber - 1);
+                    tile.SetXY(tile.width * col, tile.height * row);
+                    parent.AddChild(tile);
+                }
+            }
         }
     }
 
@@ -41,44 +62,17 @@ public class Level : GameObject
 
         foreach (Layer curLayer in leveldata.Layers)
         {
-            short[,] tileNumbers = curLayer.GetTileArray();
             if (curLayer.Name == "Background")
             {
                 spriteBackground = new SpriteBatch();
-                for (int row = 0; row < curLayer.Height; row++)
-                {
-                    for (int col = 0; col < curLayer.Width; col++)
-                    {
-                        int tileNumber = tileNumbers[col, row];
-                        if (tileNumber > 0)
-                        {
-                            AnimationSprite tile = new AnimationSprite("assets/tileset.png", 12, 2, addCollider: false);
-                            spriteBackground.AddChild(tile);
-                            tile.SetFrame(tileNumber - 1);
-                            tile.SetXY(tile.width * col, tile.height * row);
-                        }
-                    }
-                }
+                LoadTiles(curLayer, spriteBackground, false);
                 spriteBackground.Freeze();
                 //spriteBackground.SetColor(0.5f, 0.5f, 0.5f);
                 AddChild(spriteBackground);
             }
             else
             {
-                for (int row = 0; row < curLayer.Height; row++)
-                {
-                    for (int col = 0; col < curLayer.Width; col++)
-                    {
-                        int tileNumber = tileNumbers[col, row];
-                        if (tileNumber > 0)
-                        {
-                            AnimationSprite tile = new AnimationSprite("assets/tileset.png", 12, 2);
-                            tile.SetFrame(tileNumber - 1);
-                            tile.SetXY(tile.width * col, tile.height * row);
-                            AddChild(tile);
-                        }
-                    }
-                }
+                LoadTiles(curLayer, this, true);
             }
         }
     }
@@ -135,8 +129,24 @@ public class Level : GameObject
                         Button button = new Button(obj.X, obj.Y, (int)obj.Width, (int)obj.Height, obj.GetStringProperty("NextLevel", ""), obj.GetStringProperty("Image", ""));
                         AddChild(button);
                         break;
+                    case "Checkpoint":
+                        Checkpoint checkpoint = new Checkpoint(obj.X, obj.Y, (int)obj.Width, (int)obj.Height);
+                        checkpoints.Add(checkpoint);
+                        AddChild(checkpoint);
+                        break;
+                    case "Collectible":
+                        Collectible collectible = new Collectible(obj.X, obj.Y);
+                        collectibles.Add(collectible);
+                        AddChild(collectible);
+                        break;
                 }
             }
+        }
+
+        if (player != null && levelChange != null)
+        {
+            //Set the level progress bar's start and end positions
+            ((MyGame)game).GetHUD().SetLevelProgress(player.x, levelChange.x);
         }
     }
 
@@ -175,6 +185,22 @@ public class Level : GameObject
         }*/
     }
 
+    public void UpdateCollectedCollectibles()
+    {
+        if (collectiblesCollected == null || collectibles == null) { return; }
+
+        int collectedCount = 0;
+        for (int i = 0; i < collectibles.Count; i++)
+        {
+            if (collectibles[i].IsCollected == true)
+            {
+                collectiblesCollected.Insert(collectedCount, i);
+
+                collectedCount++;
+            }
+        }
+    }
+
     void DestroyChildren()
     {
         List<GameObject> children = GetChildren();
@@ -186,10 +212,46 @@ public class Level : GameObject
 
     void Restart()
     {
+        bool hasPassedCheckpoint = false;
+        int checkpointIndex = -1;
+        int prevCollected = 0;
+        if (checkpoints != null)
+        {
+            for (int i = checkpoints.Count - 1; i >= 0; i--)
+            {
+                if (checkpoints[i].IsPassed)
+                {
+                    hasPassedCheckpoint = true;
+                    checkpointIndex = i;
+                    prevCollected = checkpoints[i].Collected;
+                    break;
+                }
+            }
+        }
+
+        checkpoints = new List<Checkpoint>();
+        collectibles = new List<Collectible>();
         DestroyChildren();
         SpawnBackgroundImage(leveldata);
         SpawnTiles(leveldata);
         SpawnObjects(leveldata);
+
+        if (hasPassedCheckpoint && checkpointIndex != -1)
+        {
+            if (chaser != null)
+            {
+                chaser.SetXY(checkpoints[checkpointIndex].x - chaser.width - 500, chaser.y);
+            }
+            player.SetXY(checkpoints[checkpointIndex].x, checkpoints[checkpointIndex].y);
+            player.Collected = prevCollected;
+
+            //Removes already collected collectibles
+            for (int i = 0; i < collectiblesCollected.Count; i++)
+            {
+                int j = collectiblesCollected[i];
+                collectibles[j].Collect();
+            }
+        }
     }
     void HandleRestart()
     {
@@ -213,12 +275,12 @@ public class Level : GameObject
         }
     }
 
-
     void SwitchLevel()
     {
         if (levelChange != null && player != null && player.HitTest(levelChange) && levelChange.NextLevel != "")
         {
             nextLevel.Play(false, 0, 0.3f);
+            ((MyGame)game).CoinCount += player.Collected;
             ((MyGame)game).LoadLevel(levelChange.NextLevel);
         }
     }

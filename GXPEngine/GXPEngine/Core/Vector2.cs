@@ -23,6 +23,8 @@ namespace GXPEngine.Core
             double length = Math.Sqrt(x * x + y * y);
             return new Vector2((float)(x / length), (float)(y / length));
         }
+
+        //Moves the vector between two points
         public void PingPong(float time, Vector2 startXY, Vector2 endXY)
         {
             float delta = 1 - Mathf.Abs(time % 2f - 1f);

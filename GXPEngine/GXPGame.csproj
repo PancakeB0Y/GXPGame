@@ -43,6 +43,8 @@
   <ItemGroup>
     <Compile Include="Button.cs" />
     <Compile Include="Chaser.cs" />
+    <Compile Include="Checkpoint.cs" />
+    <Compile Include="Collectible.cs" />
     <Compile Include="Explosive.cs" />
     <Compile Include="GXPEngine\AddOns\Gizmos.cs" />
     <Compile Include="GXPEngine\AddOns\SpriteBatch.cs" />

@@ -9,27 +9,27 @@ public class Player : EasyDraw
     readonly Level level;
     readonly AnimationSprite playerSprite;
 
-    readonly float basePlayerSpeed = 1.5f;
-    float playerSpeed = 1.5f;
-    const float gravity = 0.1f;
+    readonly float basePlayerSpeed = 4f;
+    float playerSpeed = 4f;
+    const float gravity = 0.5f;
 
     //Acceleration when walking
     float xVelocity = 0;
-    const float xAcceleration = 0.045f;
-    const float maxXVelocity = 1.5f;
-    const float reactivityPercent = 0.02f; //Multiplier when moving in opposite direction of acceleration
+    const float xAcceleration = 0.12f;
+    const float maxXVelocity = 2f;
+    const float reactivityPercent = 0.1f; //Multiplier when moving in opposite direction of acceleration
 
     //Acceleration when jumping and falling
     float yVelocity = 0;
-    const float yAcceleration = 0.15f;
-    const float maxYVelocity = 3.3f;
+    const float yAcceleration = 0.5f;
+    const float maxYVelocity = 12f;
 
-    const float jumpImpulse = 2.5f; //Initial jump height //Max jump length 17 tiles
-    const float jumpAcceleration = 0.12f; //Upward acceleration when holding jump button
+    const float jumpImpulse = 5f; //Initial jump height
+    const float jumpAcceleration = 0.4f; //Upward acceleration when holding jump button
     int jumpFrames = 0; //Frames while holding jump button
-    const int maxJumpFrames = 30; //Max frames for extended jump
+    const int maxJumpFrames = 13; //Max frames for extended jump
     int framesSinceGrounded = 0; //Frames since leaving platform
-    const int maxFramesSinceGrounded = 12; //Max frames allowed to jump after leaving platform
+    const int maxFramesSinceGrounded = 5; //Max frames allowed to jump after leaving platform
     /*int framesSinceJump = 0; //Frames since jump button is pressed
     const int maxFramesSinceJump = 10; //Max frames to register jump before touching ground
     bool tolerateJump = false;*/
@@ -38,7 +38,7 @@ public class Player : EasyDraw
     bool isGrounded = false;
 
     int idleFrames = 0;
-    const int maxIdleFrames = 5;
+    const int maxIdleFrames = 3;
 
     bool isExplosivePlaced = false;
     readonly List<Explosive> explosives;
@@ -48,7 +48,11 @@ public class Player : EasyDraw
 
     bool isOnMovingPlatform = false;
 
-    Sound jumpSound = new Sound("assets/jump.wav", false, true);
+    readonly Sound jumpSound = new Sound("assets/jump.wav");
+    readonly Sound collectSound = new Sound("assets/collect.wav");
+
+    int _collected = 0;
+    public int Collected { get => _collected; set => _collected = value; }
 
     public Player(Level level, float pX, float pY) : base(32, 40)
     {
@@ -233,7 +237,7 @@ public class Player : EasyDraw
         //Limits control while in the air
         if (!isGrounded)
         {
-            playerSpeed = 1.5f;
+            playerSpeed = 4f;
         }
         else
         {
@@ -295,9 +299,16 @@ public class Player : EasyDraw
 
     void UpdateHUD()
     {
-        /*float cooldownLeft = Mathf.Ceiling((explosiveCooldown - curExplosiveCooldown) / 1000);
-        ((MyGame)game).GetHUD().SetExplosiveCooldown((int)cooldownLeft);*/
         ((MyGame)game).GetHUD().SetExplosiveCooldown(curExplosiveCooldown, explosiveCooldown, GetGlobalXY());
+        ((MyGame)game).GetHUD().UpdateCoinCount(_collected);
+        if (isOnMovingPlatform)
+        {
+            ((MyGame)game).GetHUD().UpdateLevelProgress(x + parent.x);
+        }
+        else
+        {
+            ((MyGame)game).GetHUD().UpdateLevelProgress(x);
+        }
     }
 
     public Vector2 GetGlobalXY()
@@ -312,5 +323,20 @@ public class Player : EasyDraw
         HandleExplosives();
         ApplyExplosionForce();
         UpdateHUD();
+    }
+
+    void OnCollision(GameObject other)
+    {
+        if (other.GetType() == typeof(Collectible) && !((Collectible)other).IsCollected)
+        {
+            _collected++;
+            collectSound.Play(false, 0, 0.3f);
+            ((Collectible)other).Collect();
+        }
+
+        if (other.GetType() == typeof(Checkpoint) && !((Checkpoint)other).IsPassed)
+        {
+            ((Checkpoint)other).Pass(this);
+        }
     }
 }

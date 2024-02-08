@@ -14,10 +14,10 @@ public class Explosive : EasyDraw
     Sound placeSound = new Sound("assets/place.wav");
     Sound explodeSound = new Sound("assets/explode.wav");
 
-    float _explosionForce = 6;
+    float _explosionForce = 8;
     public float ExplosionForce { get => _explosionForce; set => _explosionForce = value; }
 
-    const int closeExplosionRange = 60; //The distance within which the explosion is the strongest
+    const int closeExplosionRange = 80; //The distance within which the explosion is the strongest
     const int explosionRange = 300; //The distance within which the explosion has any effect
     float distMult; //Explosion multiplier based on the distance from the player to the explosive
     Vector2 explosionDir;
@@ -26,16 +26,16 @@ public class Explosive : EasyDraw
     {
         this.player = player;
 
-        //Clear(Color.Red);
+        Clear(Color.Red);
         SetXY(this.player.x, this.player.y + this.player.height / 2 - width / 2);
         SetOrigin(width / 2, height / 2);
 
-        explosiveVisual = new EasyDraw("assets/explosive.png", false);
+        /*explosiveVisual = new EasyDraw("assets/explosive.png", false);
         explosiveVisual.width = 15;
         explosiveVisual.height = 15;
-        explosiveVisual.SetColor(0.5f, 0.5f, 1f);
+        explosiveVisual.SetColor(1f, 0f, 0f);
         explosiveVisual.SetXY(-7.5f, -7.5f);
-        AddChild(explosiveVisual);
+        AddChild(explosiveVisual);*/
 
         placeSound.Play(false, 0, 0.3f);
     }
@@ -44,7 +44,7 @@ public class Explosive : EasyDraw
     {
         //Remove the explosive visualizer 
         Clear(0, 0, 0, 0);
-        explosiveVisual.Clear(0, 0, 0, 0);
+        //explosiveVisual.Clear(0, 0, 0, 0);
 
         explodeSound.Play(false, 0, 0.4f);
 

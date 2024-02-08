@@ -10,10 +10,14 @@ public class MyGame : Game
     string nextLevel;
     HUD _HUD;
     readonly Sound backgroundMusic = new Sound("assets/background.wav", true);
+    int _coinCount = 0;
+    public int CoinCount { get => _coinCount; set => _coinCount = value; }
 
-    public MyGame() : base(Settings.Width, Settings.Height, Settings.FullScreen, true, Settings.ScreenResolutionX, Settings.ScreenResolutionY, true)
+    public MyGame() : base(Settings.Width, Settings.Height, Settings.FullScreen, false, Settings.ScreenResolutionX, Settings.ScreenResolutionY, true)
     {
-        LoadLevel("startMenu.tmx");
+        targetFps = 60;
+
+        LoadLevel("level1.tmx");
         backgroundMusic.Play(false, 0, 0.03f);
         //game.OnAfterStep += LateUpdate;
         game.OnAfterStep += CheckLoadLevel;
@@ -35,15 +39,18 @@ public class MyGame : Game
 
     void CheckLoadLevel()
     {
-        if (nextLevel != null)
+        if (nextLevel == null) { return; }
+
+        if (nextLevel == "startMenu.tmx")
         {
-            //Destroy current level
-            DestroyAll();
-            //Load next level
-            LateAddChild(new Level(nextLevel));
-            CreateUI();
-            nextLevel = null;
+            _coinCount = 0;
         }
+        //Destroy current level
+        DestroyAll();
+        //Load next level
+        CreateUI();
+        LateAddChild(new Level(nextLevel));
+        nextLevel = null;
     }
 
     void CreateUI()
